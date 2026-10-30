@@ -1,0 +1,16 @@
+flowchart LR
+    R["SetCmd::Set 返回 OpStatus"]
+    W{"结果"}
+    E1["WRONG_TYPE / OOM<br/>SendError"]
+    G["SET GET<br/>发送旧值"]
+    MC["Memcache<br/>STORED / NOT_STORED"]
+    OK["Redis OK<br/>SendOk"]
+    N["条件未满足<br/>SendNull"]
+    B["ReplyBuilder"]
+
+    R --> W
+    W -->|错误| E1 --> B
+    W -->|SET GET| G --> B
+    W -->|Memcache| MC --> B
+    W -->|OK| OK --> B
+    W -->|SKIPPED| N --> B

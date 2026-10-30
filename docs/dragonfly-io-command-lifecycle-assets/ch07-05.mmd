@@ -1,0 +1,17 @@
+flowchart TD
+    A["PrepareTransaction(cid)"]
+    B{"ConnectionContext 已有 transaction？"}
+    C["MULTI/EVAL 内复用<br/>MultiSwitchCmd"]
+    D{"cid->IsTransactional？"}
+    E["new Transaction(cid)"]
+    F["不创建 transaction"]
+    G{"需要立即 InitByArgs？"}
+    H["DetermineKeys + 分片"]
+    I["CommandContext::SetupTx"]
+    A --> B
+    B -->|是| C --> I
+    B -->|否| D
+    D -->|是| E --> G
+    D -->|否| F --> I
+    G -->|是| H --> I
+    G -->|MULTI 自行初始化| I

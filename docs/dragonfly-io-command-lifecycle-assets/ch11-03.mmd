@@ -1,0 +1,19 @@
+sequenceDiagram
+    participant C as Client
+    participant S as Service
+    participant D as DbSlice on shards
+    participant E as ExecInfo
+
+    C->>S: WATCH k
+    S->>D: RegisterWatchedKey(k, &watched_dirty)
+    S->>E: 记录 db/key 与 existed count
+    D-->>E: key 被修改或过期时 watched_dirty=true
+    C->>S: MULTI ... EXEC
+    S->>E: 检查 watched_dirty
+    alt 已变脏或存在性复查失败
+      S-->>C: Null Array
+    else 未变化
+      S->>S: StartMulti + 执行 body
+      S-->>C: Array replies
+    end
+    S->>D: UnregisterConnectionWatches

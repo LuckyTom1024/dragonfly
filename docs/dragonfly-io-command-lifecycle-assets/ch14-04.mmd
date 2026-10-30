@@ -1,0 +1,22 @@
+flowchart TD
+    A["SIGINT / SIGTERM<br/>或服务触发 stop"]
+    B["AcceptServer::BreakListeners"]
+    C["ListenerInterface::StopAccepting<br/>shutdown listen socket"]
+    D["RunAcceptLoop 的 Accept 返回错误并退出"]
+    E["Listener::PreShutdown<br/>短暂等待在途 dispatch"]
+    F["AwaitFiberOnAll<br/>遍历每线程 connection list"]
+    G["Connection::Shutdown<br/>唤醒并取消 socket 等待"]
+    H["每条 ConnectionFlow 正常清理"]
+    I["AwaitEmpty 所有 connection list"]
+    J["关闭 listen socket<br/>AcceptServer ref counter Dec"]
+    K["AcceptServer::Wait 返回"]
+    L["Service::Shutdown"]
+    M["global_state=SHUTTING_DOWN / lame duck"]
+    N["cluster_family / server_family shutdown"]
+    O["EngineShardSet::PreShutdown<br/>停 heartbeat、tiering"]
+    P["EngineShardSet::Shutdown<br/>Namespaces + shards"]
+    Q["清 thread-local ServerState"]
+    R["ProactorPool::Stop / pthread_join"]
+
+    A --> B --> C --> D --> E --> F --> G --> H --> I --> J --> K
+    K --> L --> M --> N --> O --> P --> Q --> R

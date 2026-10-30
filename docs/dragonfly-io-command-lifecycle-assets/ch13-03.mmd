@@ -1,0 +1,29 @@
+sequenceDiagram
+    participant C as Client Connection Fiber
+    participant SF as ServerFamily
+    participant BG as bg_save_fiber
+    participant SC as SaveStagesController
+    participant T as SAVE Transaction
+    participant S0 as EngineShard 0
+    participant S1 as EngineShard 1
+    participant SS0 as SliceSnapshot Fiber 0
+    participant SS1 as SliceSnapshot Fiber 1
+    participant OUT as SnapshotStorage / files
+
+    C->>SF: BGSAVE
+    SF->>SC: DoSaveCheckAndStart: Init + Start
+    SC->>T: ScheduleSingleHop(start snapshots)
+    par shard 0
+      T->>S0: SaveDfsSingle / StartInShard
+      S0->>SS0: SliceSnapshot::Start
+      SS0->>OUT: serialized chunks
+    and shard 1
+      T->>S1: SaveDfsSingle / StartInShard
+      S1->>SS1: SliceSnapshot::Start
+      SS1->>OUT: serialized chunks
+    end
+    SF->>BG: launch BgSaveFb, transaction intrusive_ptr 保活
+    SF-->>C: OK
+    BG->>SC: WaitAllSnapshots
+    SC->>OUT: summary/body、close、rename tmp
+    BG->>SC: Finalize

@@ -1,0 +1,19 @@
+classDiagram
+    class CommandRegistry {
+      flat_hash_map cmd_map_
+      Find(name)
+      FindExtended(args)
+      Init(thread_count)
+    }
+    class CommandId {
+      name
+      opt_mask
+      arity
+      first_key
+      last_key
+      acl_categories
+      Handler handler_
+      Validate(args)
+      Invoke(args, context)
+    }
+    CommandRegistry "1" o-- "*" CommandId

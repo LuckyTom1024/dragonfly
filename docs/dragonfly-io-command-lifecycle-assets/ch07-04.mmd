@@ -1,0 +1,32 @@
+flowchart TD
+    A["VerifyCommandState"]
+    B{"非 admin 连接调用 restricted？"}
+    C{"arity / validator 合法？"}
+    D{"全局状态允许？<br/>LOADING / SHUTTING_DOWN / TAKEN_OVER"}
+    E{"需要认证且未认证？"}
+    F{"MONITOR / replica 写限制？"}
+    G{"MULTI 内允许？"}
+    H{"cluster slot 归属与 cross-slot？"}
+    I{"脚本内允许且 key 已声明？"}
+    J{"ACL 命令/key/channel 权限？"}
+    K["通过"]
+    X["返回 ErrorReply"]
+    A --> B
+    B -->|否| C
+    B -->|是| X
+    C -->|是| D
+    C -->|否| X
+    D -->|是| E
+    D -->|否| X
+    E -->|否/已认证| F
+    E -->|是| X
+    F -->|允许| G
+    F -->|拒绝| X
+    G -->|允许| H
+    G -->|拒绝| X
+    H -->|通过| I
+    H -->|错误/MOVED| X
+    I -->|通过| J
+    I -->|拒绝| X
+    J -->|通过| K
+    J -->|拒绝| X

@@ -1,0 +1,22 @@
+flowchart LR
+    subgraph Producer["Connection Fiber（生产者）"]
+      R["Recv"]
+      P["ParseRedis"]
+      ENQ["parsed command 链表入队"]
+    end
+
+    subgraph Consumer["AsyncFiber（消费者，懒启动）"]
+      W["cnd_.wait"]
+      POL["选择处理策略"]
+      SQ["SquashPipeline"]
+      ONE["ProcessPipelineCommandV1"]
+      CTRL["ProcessAdminMessage"]
+      FL["ReplyBuilder::Flush"]
+    end
+
+    R --> P --> ENQ --> W
+    W --> POL
+    POL --> SQ --> FL
+    POL --> ONE --> FL
+    POL --> CTRL --> FL
+    FL -.->|"队列/内存下降，唤醒反压"| Producer

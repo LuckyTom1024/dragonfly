@@ -1,0 +1,12 @@
+flowchart LR
+    B1["RunSingleConnection"]
+    B2["Connection::ParseRedis"]
+    B3["Service::DispatchCommand"]
+    B4["CmdSet"]
+    B5["Transaction::ScheduleInShard"]
+    B6["EngineShard::PollExecution"]
+    B7["SetCmd::Set"]
+    B8["SinkReplyBuilder::Send"]
+    B9["ConnectionFlow close section"]
+
+    B1 --> B2 --> B3 --> B4 --> B5 --> B6 --> B7 --> B8 --> B9

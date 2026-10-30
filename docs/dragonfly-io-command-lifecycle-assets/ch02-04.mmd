@@ -1,0 +1,8 @@
+flowchart LR
+    A["Service 构造函数"]
+    B["RegisterCommands"]
+    C["各 family::Register"]
+    D["CommandRegistry::operator<<"]
+    E["CommandRegistry::Init(thread_count)"]
+    F["运行期只读 Find / FindExtended"]
+    A --> B --> C --> D --> E --> F

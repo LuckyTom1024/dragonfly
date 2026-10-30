@@ -1,0 +1,15 @@
+flowchart TD
+    Start((start)) -->|"fb2::Fiber / MakeWorkerFiberImpl"| Created["Created"]
+    Created -->|"Start(Launch::post)"| Ready["Ready"]
+    Created -->|"Start(Launch::dispatch)"| Running["Running"]
+    Ready -->|"Scheduler::Run → SwitchTo"| Running
+    Running -->|"ThisFiber::Yield"| Ready
+    Running -->|"FiberCall::Get / PendingReq::Suspend"| WaitingIO["WaitingIO"]
+    Running -->|"SleepFor / WaitUntil"| Sleeping["Sleeping"]
+    Running -->|"EventCount / Mutex / Barrier / Join"| WaitingSync["WaitingSync"]
+    WaitingIO -->|"CQE / epoll callback → Activate"| Ready
+    Sleeping -->|"ProcessSleep 到期"| Ready
+    WaitingSync -->|"notify / counter=0 / joined fiber ends"| Ready
+    Running -->|"fiber function returns"| Terminating["Terminating"]
+    Terminating -->|"ScheduleTermination + DestroyTerminated"| Reclaimed["Reclaimed"]
+    Reclaimed --> Stop((end))

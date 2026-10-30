@@ -1,0 +1,9 @@
+flowchart LR
+    A["连接 A Recv 等待"]
+    B["Fiber A Yield"]
+    C["同一 OS 线程调度器"]
+    D["运行连接 B / shard queue / heartbeat"]
+    E["A 的 IO completion"]
+    F["Fiber A 重新 Ready"]
+    A --> B --> C --> D
+    E --> C --> F

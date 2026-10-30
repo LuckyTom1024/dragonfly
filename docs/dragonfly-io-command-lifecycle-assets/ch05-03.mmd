@@ -1,0 +1,18 @@
+stateDiagram-v2
+    [*] --> CMD_COMPLETE
+    CMD_COMPLETE --> ARRAY_LEN: 首字节是 *
+    CMD_COMPLETE --> INLINE: 其他首字节
+
+    ARRAY_LEN --> PARSE_ARG_TYPE: 读完 *N CRLF
+    PARSE_ARG_TYPE --> PARSE_ARG: 只接受 $
+    PARSE_ARG --> BULK_STR: 读完 $len CRLF
+    BULK_STR --> PARSE_ARG_TYPE: 一个参数完成且仍有参数
+    BULK_STR --> CMD_COMPLETE: 最后一个参数完成
+    BULK_STR --> SLASH_N: 只收到 CR，等待 LF
+    SLASH_N --> PARSE_ARG_TYPE: 参数完成
+    SLASH_N --> CMD_COMPLETE: 最后参数完成
+
+    INLINE --> CMD_COMPLETE: 读到换行
+    ARRAY_LEN --> ARRAY_LEN: INPUT_PENDING
+    PARSE_ARG --> PARSE_ARG: INPUT_PENDING
+    BULK_STR --> BULK_STR: INPUT_PENDING

@@ -1,0 +1,31 @@
+flowchart TD
+    A["Connection::HandleRequests"]
+    B["注册 read buffer 容量统计"]
+    C{"ssl_ctx_ 存在？"}
+    D["预读 5 字节 TLS record header"]
+    E{"header 合法？"}
+    F["包装 TlsSocket + TLS Accept 握手"]
+    G["返回，连接随后关闭"]
+    H["CheckForHttpProto"]
+    I{"HTTP/1.1 GET / POST？"}
+    J["Service::CreateContext"]
+    K["HttpConnection::ParseFromBuffer / HandleRequests"]
+    L["选择 ioloop_v2_ 与 pipeline squashing"]
+    M["RegisterOnErrorCb"]
+    N{"协议"}
+    O["RedisReplyBuilder + RespSrvParser"]
+    P["MCReplyBuilder + MemcacheParser"]
+    Q["CreateParsedCommand -> CommandContext"]
+    R["ConnectionFlow"]
+
+    A --> B --> C
+    C -->|是| D --> E
+    E -->|否| G
+    E -->|是| F --> H
+    C -->|否| H
+    H --> J --> I
+    I -->|是| K
+    I -->|否| L --> M --> N
+    N -->|RESP| O --> Q
+    N -->|Memcache| P --> Q
+    Q --> R

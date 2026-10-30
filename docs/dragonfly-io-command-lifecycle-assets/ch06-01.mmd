@@ -1,0 +1,14 @@
+flowchart TD
+    A["非 HTTP 连接"]
+    B{"Protocol"}
+    C{"enable_resp_io_loop_v2<br/>默认 false"}
+    D{"enable_memcache_io_loop_v2<br/>默认 true"}
+    E["V1：Connection Fiber + 懒启动 AsyncFiber"]
+    F["V2：单 Connection Fiber 事件循环"]
+    A --> B
+    B -->|RESP| C
+    B -->|Memcache| D
+    C -->|false| E
+    C -->|true| F
+    D -->|false| E
+    D -->|true| F

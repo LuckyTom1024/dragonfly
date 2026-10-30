@@ -1,0 +1,16 @@
+flowchart TD
+    A["ParseRedis 完成一条命令"]
+    B["DispatchSingle(has_more)"]
+    C{"conn_closing？"}
+    D{"has_more 或已有 async/control 消息<br/>或 subscriber 模式？"}
+    E["LaunchAsyncFiberIfNeeded"]
+    F["EnqueueParsedCommand"]
+    G["当前 Connection Fiber 内<br/>sync_dispatch=true"]
+    H["Service::DispatchCommand ONLY_SYNC"]
+    I["sync_dispatch=false"]
+    J["继续 Recv"]
+    A --> B --> C
+    C -->|是| J
+    C -->|否| D
+    D -->|是| E --> F --> J
+    D -->|否| G --> H --> I --> J

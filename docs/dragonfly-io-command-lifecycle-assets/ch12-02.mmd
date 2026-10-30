@@ -1,0 +1,35 @@
+flowchart LR
+    MAIN["main OS thread<br/>建池、配置、等待 shutdown"]
+
+    subgraph P0["Proactor OS thread 0"]
+      LOOP0["io_uring / epoll loop"]
+      AF["AcceptLoop Fiber（可能）"]
+      CF0["Connection Fibers"]
+      SQ0["HIGH shard_queue_0 Fiber"]
+      ES0["EngineShard 0 / DbSlice 0"]
+      HB0["heartbeat Fiber + idle defrag"]
+      SS0["SliceSnapshot Fiber（按需）"]
+    end
+
+    subgraph P1["Proactor OS thread 1"]
+      LOOP1["io_uring / epoll loop"]
+      CF1["Connection Fibers"]
+      SQ1["HIGH shard_queue_1 Fiber"]
+      ES1["EngineShard 1 / DbSlice 1"]
+      RF1["replication flow Fiber（按需）"]
+    end
+
+    subgraph PN["其余 Proactor OS threads"]
+      LOOPN["Proactor loop"]
+      CFN["连接 / 管理 / 复制 Fibers"]
+      ESN["若 index < shard 数：EngineShard"]
+    end
+
+    MAIN --> P0
+    MAIN --> P1
+    MAIN --> PN
+    AF --> CF0
+    AF --> CF1
+    CF0 -->|"同线程可内联"| ES0
+    CF0 -->|"TaskQueue message"| SQ1
+    SQ1 --> ES1

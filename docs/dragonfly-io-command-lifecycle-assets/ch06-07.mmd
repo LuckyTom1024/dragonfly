@@ -1,0 +1,10 @@
+flowchart LR
+    C["某连接持续发送"]
+    Q["parsed_cmd_q_len / bytes 增长"]
+    TL["每 Proactor QueueBackpressure<br/>queue/bytes limit"]
+    P["生产者停止解析或 park"]
+    D["执行与回复释放 ParsedCommand"]
+    N["NotifyPipelineWaiters"]
+    R["恢复收包/解析"]
+    C --> Q --> TL -->|超限| P
+    P --> D --> N --> R

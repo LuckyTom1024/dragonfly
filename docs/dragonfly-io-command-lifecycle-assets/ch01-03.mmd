@@ -1,0 +1,8 @@
+flowchart LR
+    CF["连接 Fiber<br/>固定在 Proactor i"]
+    H["Shard(key)"]
+    SQ["EngineShard j 的 TaskQueue"]
+    ES["EngineShard j"]
+    CF -->|"计算目标 shard"| H -->|"投递 callback，而非迁移连接"| SQ --> ES
+    ES -->|"BlockingCounter / deferred reply 完成"| CF
+    CF -.->|"少数显式流程才调用 Migrate"| PM["Connection::Migrate"]

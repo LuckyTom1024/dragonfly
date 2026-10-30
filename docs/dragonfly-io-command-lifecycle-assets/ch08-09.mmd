@@ -1,0 +1,51 @@
+sequenceDiagram
+    autonumber
+    participant CF as Connection Fiber<br/>连接线程 T0
+    participant TX as Transaction
+    participant Q as EngineShard::queue_
+    participant SF as Shard queue Fiber<br/>目标线程 T1
+    participant ES as EngineShard / PollExecution
+    participant CB as GET/SET shard callback
+    participant RB as ReplyBuilder
+
+    CF->>CF: Service::DispatchCommand<br/>CommandId::Invoke -> CmdGet/CmdSet
+    CF->>TX: co_await SingleHop(callback)
+    TX->>TX: ScheduleSingleHop -> Execute -> ScheduleInternal
+
+    alt CanRunInlined() == true
+        TX->>ES: ScheduleInShard(EngineShard::tlocal(), true)
+        ES->>CB: immediate_run -> RunCallback() -> callback(tx, shard)
+        CB-->>ES: OpStatus / OpResult
+        ES-->>TX: ScheduleInternal 直接 barrier.Dec()
+        TX->>ES: PollExecutionIfDeferred()
+        TX->>TX: DispatchHop 看到 run_cnt == 0
+        TX-->>CF: 从 SingleHop 返回
+    else 不能 inline：先投递 schedule callback
+        TX->>Q: shard_set->Add(target_shard, schedule_cb)
+        Note over CF,TX: Connection Fiber 在 schedule barrier.Wait() 挂起<br/>OS 线程 T0 可运行其他 Fiber
+        Q->>SF: FiberQueue::Run()
+        SF->>ES: schedule_cb -> ScheduleInShard(..., true)
+
+        alt schedule 阶段可以 optimistic immediate_run
+            ES->>CB: RunCallback() -> callback(tx, shard)
+            CB-->>ES: OpStatus / OpResult
+            ES-->>TX: FinishHop -> schedule barrier.Dec()
+            TX->>TX: DispatchHop 看到 run_cnt == 0<br/>不再调用 PollExecution
+        else 插入 TxQueue，需要 execution hop
+            ES-->>TX: FinishHop -> schedule barrier.Dec()
+            TX->>TX: DispatchHop 标记 is_armed
+            TX->>Q: shard_set->Add(target_shard, poll_cb)
+            Note over CF,TX: Connection Fiber 在 execution barrier.Wait() 再次挂起
+            Q->>SF: FiberQueue::Run()
+            SF->>ES: poll_cb -> PollExecution("exec_cb")
+            ES->>ES: PollExecutionInternal()
+            ES->>CB: RunInShard() -> RunCallback() -> callback(tx, shard)
+            CB-->>ES: OpStatus / OpResult
+            ES-->>TX: FinishHop -> execution barrier.Dec()
+        end
+        TX-->>CF: barrier 归零，Connection Fiber 恢复
+    end
+
+    CF->>CF: CmdGet/CmdSet 从 co_await 后继续
+    CF->>RB: GetReplies::Send() / SendOk()
+    RB-->>CF: 写入连接回复缓冲

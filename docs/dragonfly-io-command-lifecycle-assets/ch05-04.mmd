@@ -1,0 +1,16 @@
+flowchart TD
+    A["read_buffer = io_buf.InputBuffer"]
+    B["RespSrvParser::Parse"]
+    C{"完成一条命令？"}
+    D["计算 has_more"]
+    E["DispatchSingle 或仅 enqueue"]
+    F["read_buffer.remove_prefix(consumed)"]
+    G{"仍有数据且未超 CPU/内存预算？"}
+    H["ThisFiber::Yield"]
+    I["ConsumeInput(total_consumed)"]
+    A --> B --> C
+    C -->|是| D --> E --> F --> G
+    G -->|是| B
+    G -->|运行过久| H --> B
+    C -->|半包/错误| I
+    G -->|否| I

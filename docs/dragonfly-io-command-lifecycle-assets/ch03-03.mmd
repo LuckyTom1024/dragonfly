@@ -1,0 +1,16 @@
+flowchart TD
+    A["PickConnectionProactor(peer)"]
+    B{"UDS？"}
+    C["读取 SO_INCOMING_CPU / NAPI 信息"]
+    D{"conn_use_incoming_cpu 且能映射？"}
+    E["选择该 CPU 对应 Proactor"]
+    F["读取 conn_io_thread_start / conn_io_threads"]
+    G["在允许区间 round-robin"]
+    H["返回 Proactor*"]
+
+    A --> B
+    B -->|否| C --> D
+    D -->|是| E --> H
+    D -->|否| F
+    B -->|是| F
+    F --> G --> H

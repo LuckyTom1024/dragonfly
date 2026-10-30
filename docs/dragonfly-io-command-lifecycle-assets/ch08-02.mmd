@@ -1,0 +1,20 @@
+flowchart TD
+    A["Transaction::InitByArgs"]
+    B{"GLOBAL_TRANS？"}
+    C["EnableAllShards"]
+    D{"NO_KEY_TRANSACTIONAL？"}
+    E["按选项启用 shard 0 或全部"]
+    F["DetermineKeys(CommandId, args)"]
+    G["KeyIndex: start/end/step/bonus"]
+    H["InitByKeys"]
+    I{"只有一个 key / stub / shard-local？"}
+    J["单 cell shard_data_ 快路径"]
+    K["BuildShardIndex<br/>按 shard 切参数 slices"]
+    L["计算 LockTag fingerprint"]
+    A --> B
+    B -->|是| C
+    B -->|否| D
+    D -->|是| E
+    D -->|否| F --> G --> H --> I
+    I -->|是| J --> L
+    I -->|否| K --> L

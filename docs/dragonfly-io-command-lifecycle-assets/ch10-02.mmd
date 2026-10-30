@@ -1,0 +1,10 @@
+flowchart LR
+    subgraph B["ReplyBuilder 内部"]
+      P["WritePieces<br/>复制短前缀、长度、CRLF"]
+      BUF["base::IoBuf buffer_<br/>容量按需增长，上限 8192"]
+      R["WriteRef<br/>引用长 value，不复制"]
+      V["vecs_: InlinedVector<iovec, 16>"]
+    end
+    S1["'+', '$123', CRLF"] --> P --> BUF --> V
+    S2["大字符串 value"] --> R --> V
+    V --> W["writev / sendmsg 语义的一次向量写"]

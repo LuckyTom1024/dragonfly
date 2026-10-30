@@ -1,0 +1,14 @@
+flowchart TD
+    A["Service::Init"]
+    B["Connection::Init(N)<br/>每 Proactor 反压状态"]
+    C["计算 shard_num<br/>0 或大于 N 时取 N"]
+    D["pp_.AwaitBrief(all threads)"]
+    E["每线程 FacadeStats + ServerState"]
+    F["EngineShardSet::Init(shard_num)"]
+    G["前 shard_num 个 Proactor：EngineShard::InitThreadLocal"]
+    H["每 shard 启动 shard_queue 与 l2_queue Fiber"]
+    I["创建 Namespaces / DbSlice"]
+    J["每 shard 启动 heartbeat、周期 handler、idle defrag"]
+    K["ServerFamily::Init<br/>加载快照、复制、cron 等"]
+
+    A --> B --> C --> D --> E --> F --> G --> H --> I --> J --> K

@@ -1,0 +1,22 @@
+flowchart TD
+    A["CmdSet 执行到 co_await SingleHop"]
+    B["CmdR::Coro::await_transform<br/>生成 SingleHopWaiter"]
+    C{"CommandContext<br/>IsDeferredReply?"}
+
+    D["同步模式"]
+    E["await_ready 内调用<br/>Transaction::ScheduleSingleHop"]
+    F["事务等待可挂起 Connection Fiber"]
+    G["完成后 await_ready 返回 true<br/>C++ coroutine 本身不 suspend"]
+
+    H["V2 deferred 模式"]
+    I["Transaction::SingleHopAsync"]
+    J["intrusive_ptr 保活 Transaction"]
+    K["await_ready=false"]
+    L["await_suspend:<br/>ParsedCommand::Resolve(Blocker, coroutine handle)"]
+    M["barrier 完成 -> CanReply=true"]
+    N["轮到队首时 ReplyBatch -> SendReply"]
+    O["resume coroutine，生成有序回复"]
+
+    A --> B --> C
+    C -->|否| D --> E --> F --> G
+    C -->|是| H --> I --> J --> K --> L --> M --> N --> O

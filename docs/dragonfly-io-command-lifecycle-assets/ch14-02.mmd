@@ -1,0 +1,30 @@
+sequenceDiagram
+    autonumber
+    participant IO as IoLoop / IoLoopV2
+    participant CF as ConnectionFlow
+    participant AF as V1 AsyncFiber
+    participant SV as Service
+    participant H as HandleRequests
+    participant LI as ListenerInterface
+    participant S as FiberSocket
+    participant L as thread-local intrusive list
+
+    IO-->>CF: EOF / error / parse ERROR / close request
+    CF->>CF: conn_closing=true, phase=SHUTTING_DOWN
+    CF->>AF: notify + JoinIfNeeded
+    CF->>CF: phase=PRECLOSE, DrainConnectionQueues
+    CF->>SV: OnConnectionClose(ConnectionContext)
+    SV->>SV: unsubscribe / unwatch / monitor / tracking cleanup
+    CF->>S: V2 ResetOnRecvHook
+    opt protocol error
+      CF->>S: 写 protocol error
+      CF->>S: Shutdown(SHUT_WR)
+      CF->>S: drain received bytes until peer closes
+    end
+    CF-->>H: return
+    H->>H: CancelOnErrorCb, destroy reply/parser queue/context
+    H-->>LI: RunSingleConnection continues
+    LI->>S: Shutdown(SHUT_RDWR) + Close
+    LI->>L: Unlink(Connection)
+    LI->>LI: intrusive guard.reset
+    LI->>LI: open_connections_--

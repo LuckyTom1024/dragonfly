@@ -1,0 +1,6 @@
+flowchart LR
+    P["多个协调线程<br/>MPSC producers"]
+    Q["EngineShard::queue_<br/>FiberQueue"]
+    F["shard_queue_N/0<br/>HIGH priority consumer Fiber"]
+    S["同一 owner Proactor 中串行执行 task"]
+    P --> Q --> F --> S

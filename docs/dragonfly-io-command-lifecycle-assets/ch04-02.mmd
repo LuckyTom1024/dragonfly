@@ -1,0 +1,11 @@
+flowchart LR
+    S["同一个 main/admin TCP 端口"]
+    R["RESP 客户端<br/>*2 CRLF ..."]
+    H["HTTP 客户端<br/>GET /... HTTP/1.1"]
+    P["CheckForHttpProto<br/>预读首行到 io_buf_"]
+    RR["RESP：保留已读字节，交给 ConnectionFlow"]
+    HH["HTTP：交给 HttpConnection"]
+    R --> S --> P
+    H --> S
+    P --> RR
+    P --> HH

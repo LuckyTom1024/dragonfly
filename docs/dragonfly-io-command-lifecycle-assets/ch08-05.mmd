@@ -1,0 +1,22 @@
+classDiagram
+    class Transaction {
+      TxId txid_
+      PerShardData shard_data_
+      IndexSlice args_slices_
+      LockFp kv_fp_
+      RunnableType cb_ptr_
+      EmbeddedBlockingCounter run_barrier_
+    }
+    class EngineShard {
+      TxQueue txq_
+      IntentLock shard_lock_
+      TransactionPtr continuation_trans_
+      TransactionPtr running_tx_
+      TaskQueue queue_
+    }
+    class DbSlice {
+      LockTable key_locks
+      PrimeTable data
+    }
+    Transaction --> EngineShard : queued / armed
+    EngineShard --> DbSlice : Acquire / Release + callback

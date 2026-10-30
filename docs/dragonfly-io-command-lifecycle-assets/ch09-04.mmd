@@ -1,0 +1,27 @@
+flowchart TD
+    A["SetCmd::Set(params, key, value)"]
+    B{"NX / XX / GET<br/>或过期时间已在过去？"}
+    C["DbSlice::FindMutable"]
+    D{"条件满足？"}
+    E["SKIPPED / delete expired / update existing"]
+    F["DbSlice::AddOrFind(db_context, key, nullopt)"]
+    G{"is_new?"}
+    H["SetCmd::AddNew"]
+    I["SetCmd::SetExisting"]
+    J["expire / sticky / memcache flags"]
+    K["更新 PrimeValue 字符串"]
+    L["SetCmd::PostEdit"]
+    M["AutoUpdater::Run<br/>完成内存记账"]
+    N["可选 StashPrimeValue 到 tiered storage"]
+    O["可选显式 RecordJournal"]
+    P["OpStatus"]
+
+    A --> B
+    B -->|是| C --> D
+    D -->|否| E --> P
+    D -->|继续写| F
+    B -->|否| F
+    F --> G
+    G -->|新 key| H --> J
+    G -->|已有 key| I --> J
+    J --> K --> L --> M --> N --> O --> P

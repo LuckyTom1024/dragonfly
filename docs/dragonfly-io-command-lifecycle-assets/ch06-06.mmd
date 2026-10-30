@@ -1,0 +1,16 @@
+flowchart TB
+    subgraph V1["V1 pipeline"]
+      A1["Connection Fiber 继续收包"]
+      A2["AsyncFiber 调 DispatchCommand(ONLY_SYNC)"]
+      A3["命令若等 shard：挂起 AsyncFiber"]
+      A1 --- A2 --> A3
+    end
+
+    subgraph V2["V2 pipeline"]
+      B1["单 Connection Fiber"]
+      B2["DispatchCommandSimple(PREFER/ONLY_ASYNC)"]
+      B3["ParsedCommand 标为 deferred"]
+      B4["SingleHopAsync 后 handler 协程挂起"]
+      B5["ReplyBatch 恢复协程并有序写回"]
+      B1 --> B2 --> B3 --> B4 --> B5
+    end

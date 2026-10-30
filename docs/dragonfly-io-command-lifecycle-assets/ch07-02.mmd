@@ -1,0 +1,25 @@
+flowchart TD
+    A["Service::DispatchCommand(args, parsed_cmd, async_pref)"]
+    B{"Memcache？"}
+    C["HandleMemcacheCommand<br/>映射为 SET/DEL/MGET..."]
+    D["registry_.FindExtended(args)"]
+    E{"找到 CommandId？"}
+    F["unknown command reply"]
+    G["根据 async_pref + SupportsAsync<br/>决定 SetDeferredReply"]
+    H["SetTailArgs"]
+    I["CheckPauseState"]
+    J["VerifyCommandState"]
+    K{"MULTI 正在收集且非控制命令？"}
+    L["StoreInMultiBlock + QUEUED"]
+    M["PrepareTransaction"]
+    N["InvokeCmd"]
+    O["清理 top-level Transaction 指针"]
+    P["返回 DispatchResult"]
+
+    A --> B
+    B -->|是| C --> E
+    B -->|否| D --> E
+    E -->|否| F --> P
+    E -->|是| G --> H --> I --> J --> K
+    K -->|是| L --> P
+    K -->|否| M --> N --> O --> P

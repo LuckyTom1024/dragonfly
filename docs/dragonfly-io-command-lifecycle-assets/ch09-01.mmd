@@ -1,0 +1,12 @@
+flowchart LR
+    A["Service::Init"]
+    B["RegisterStringFamily"]
+    C["CommandId: SET"]
+    D["标记<br/>JOURNALED / DENYOOM / NO_AUTOJOURNAL"]
+    E["key 规则<br/>first=1, last=1, step=1"]
+    F["async_handler = CmdSet"]
+
+    A --> B --> C
+    C --> D
+    C --> E
+    C --> F

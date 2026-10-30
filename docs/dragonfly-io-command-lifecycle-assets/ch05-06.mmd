@@ -1,0 +1,15 @@
+sequenceDiagram
+    participant Client
+    participant Conn as ConnectionFlow
+    participant Async as AsyncFiber / in-flight commands
+    participant RB as ReplyBuilder
+    Client->>Conn: 合法命令 A + 非法尾部
+    Conn->>Async: A 可能已入队
+    Conn->>Conn: parser_status = ERROR
+    Conn->>Async: JoinIfNeeded / Drain queues
+    Async-->>Conn: A 的回复已完成
+    Conn->>RB: SendProtocolError
+    RB-->>Client: A reply，随后 -ERR Protocol error
+    Conn->>Client: shutdown(SHUT_WR)
+    Client-->>Conn: 关闭或剩余输入
+    Conn->>Conn: 丢弃输入直至 EOF

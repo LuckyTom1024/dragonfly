@@ -1,0 +1,11 @@
+flowchart TD
+    A["RunSingleConnection"]
+    B["boost::intrusive_ptr<Connection> guard"]
+    C["thread_local ListenerConnMap"]
+    D["TLConnList::Link<br/>嵌入式 hook"]
+    E["Listener::OnConnectionStart"]
+    F["Connection::HandleRequests"]
+    G["OnConnectionClose"]
+    H["TLConnList::Unlink"]
+    I["guard.reset -> 可能析构"]
+    A --> B --> C --> D --> E --> F --> G --> H --> I

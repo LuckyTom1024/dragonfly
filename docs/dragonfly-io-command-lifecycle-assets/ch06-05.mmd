@@ -1,0 +1,26 @@
+flowchart TD
+    A["IoLoopV2"]
+    B["RegisterOnRecv(OnRecvNotification)"]
+    C["ReadPendingInput（TryRecv drain）"]
+    D{"ShouldWakeIdle？"}
+    E["FlushReplies"]
+    F["io_event_.await<br/>Fiber 挂起"]
+    G{"control queue 非空？"}
+    H["DrainControlPath(quota)"]
+    I{"有输入且未超 pipeline limit？"}
+    J["RunParsePath"]
+    K["ParseLoop"]
+    L["ExecuteBatch"]
+    M["ReplyBatch"]
+    N["DrainQueuedCommands"]
+    O["ParkOnBackpressure"]
+    P["循环"]
+
+    A --> B --> C --> D
+    D -->|否| E --> F --> C
+    D -->|是| G
+    G -->|是| H --> I
+    G -->|否| I
+    I -->|是| J --> K --> L --> M --> P
+    I -->|否| N --> O --> P
+    P --> C

@@ -1,0 +1,23 @@
+flowchart TD
+    A["Proactor loop"]
+    B{"后端"}
+
+    U1["io_uring: submit SQE / get events"]
+    U2["运行 brief task queue"]
+    U3["ProcessRemoteReady"]
+    U4["批量 reap CQE"]
+
+    E1["epoll: 运行 task queue"]
+    E2["ProcessRemoteReady"]
+    E3["epoll_wait(timeout)"]
+    E4["DispatchCompletions"]
+
+    N["Scheduler::Run(NORMAL/HIGH queue)"]
+    G["Scheduler::Run(BACKGROUND)"]
+    L["L2 / on-idle tasks"]
+    W["无工作：按最近 timer<br/>进入内核等待"]
+
+    A --> B
+    B -->|UringProactor| U1 --> U2 --> U3 --> U4 --> N
+    B -->|EpollProactor| E1 --> E2 --> E3 --> E4 --> N
+    N --> G --> L --> W --> A

@@ -1,0 +1,10 @@
+flowchart LR
+    A["解析到非法 RESP"]
+    B["先执行/发送此前已完整解析的命令"]
+    C["SendProtocolError"]
+    D["Shutdown(SHUT_WR)<br/>服务端不再写，发送 FIN"]
+    E["继续 Recv 并丢弃"]
+    F["客户端读到错误后关闭"]
+    G["完整 Close"]
+
+    A --> B --> C --> D --> E --> F --> G

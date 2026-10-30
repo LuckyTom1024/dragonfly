@@ -1,0 +1,21 @@
+sequenceDiagram
+    participant Main as main thread
+    participant AS as AcceptServer
+    participant AP as Accept Proactor
+    participant LI as ListenerInterface
+    participant CP as Chosen Proactor
+    participant CF as Connection Fiber
+
+    Main->>AS: Run()
+    AS->>AP: Dispatch(RunAcceptLoop)
+    AP->>LI: RunAcceptLoop()
+    loop 每个新连接
+      LI->>LI: sock_->Accept()
+      LI->>LI: open_connections_++
+      LI->>LI: PickConnectionProactor(peer)
+      LI->>LI: NewConnection(next)
+      LI->>CP: DispatchBrief(create Fiber)
+      CP->>CF: Fiber(Launch::post, "Connection")
+      CF->>CF: socket->SetProactor(me)
+      CF->>LI: RunSingleConnection(conn)
+    end

@@ -1,0 +1,20 @@
+flowchart TD
+    A["一次逻辑回复开始"]
+    B{"ReplyScope 生效？"}
+    C["允许 WriteRef<br/>调用者保证引用活到 scope 结束"]
+    D["默认只假设 string_view<br/>在 Send 调用期间有效，必要时复制"]
+    E["ReplyScope 析构 -> FinishScope"]
+    F{"当前 batched？"}
+    G["立即 Flush"]
+    H{"外部引用复制成本值得且 buffer 放得下？"}
+    I["复制 refs 到 builder buffer<br/>继续聚合"]
+    J["Flush"]
+
+    A --> B
+    B -->|是| C --> E
+    B -->|否| D --> E
+    E --> F
+    F -->|否| G
+    F -->|是| H
+    H -->|是| I
+    H -->|否| J

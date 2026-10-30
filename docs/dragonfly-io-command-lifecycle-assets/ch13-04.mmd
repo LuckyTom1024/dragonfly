@@ -1,0 +1,13 @@
+flowchart LR
+    A["SliceSnapshot Fiber"]
+    B["TraverseBuckets<br/>一次逻辑 bucket"]
+    C["RdbSerializer buffer"]
+    D{"文件后端"}
+    U["io_uring: OpenLinux / LinuxWriteWrapper<br/>同 Proactor 异步等待"]
+    E["epoll: OpenFiberWriteFile"]
+    W["FiberQueueThreadPool<br/>真实 worker pthread"]
+    F["磁盘"]
+
+    A --> B --> C --> D
+    D -->|io_uring| U --> F
+    D -->|epoll| E --> W --> F

@@ -1,0 +1,23 @@
+flowchart TD
+    A["main(argc, argv)"]
+    B["解析 flags、内存/cgroup、TLS 与快照参数校验"]
+    C["fb2::SetDefaultStackResource"]
+    D{"Linux 且 io_uring 可用？"}
+    E["fb2::Pool::IOUring"]
+    F["fb2::Pool::Epoll"]
+    G["ProactorPool::Run"]
+    H["每个 Proactor 创建并启动一个 OS 线程"]
+    I["构造 AcceptServer"]
+    J["RunEngine"]
+    K["构造 Service<br/>注册全部 CommandId"]
+    L["构造 Listener 并 AddListener / bind / listen"]
+    M["Service::Init"]
+    N["初始化 ServerState、EngineShardSet、Namespaces、后台 Fiber"]
+    O["AcceptServer::Run"]
+    P["每个 listener 启动 AcceptLoop Fiber"]
+    Q["主线程 AcceptServer::Wait"]
+
+    A --> B --> C --> D
+    D -->|是| E --> G
+    D -->|否 / force_epoll| F --> G
+    G --> H --> I --> J --> K --> L --> M --> N --> O --> P --> Q

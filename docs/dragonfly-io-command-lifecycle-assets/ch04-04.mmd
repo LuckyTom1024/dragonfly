@@ -1,0 +1,7 @@
+flowchart LR
+    S["FiberSocketBase<br/>io::Sink"]
+    R["RedisReplyBuilder"]
+    M["MCReplyBuilder"]
+    C["ParsedCommand / handler"]
+    C -->|"高层 SendOk / SendBulkString"| R --> S
+    C -->|"Memcache 响应"| M --> S

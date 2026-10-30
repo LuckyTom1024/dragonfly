@@ -1,0 +1,17 @@
+flowchart TD
+    A["ScheduleSingleHop(cb)"]
+    B["Execute(cb, conclude=true)"]
+    C{"SQUASHED_STUB？"}
+    D["直接 RunSquashedMultiCb"]
+    E["cb_ptr_=cb，标记 concluding"]
+    F{"已 schedule？"}
+    G["ScheduleInternal"]
+    H["DispatchHop"]
+    I["run_barrier_.Wait"]
+    J["返回 local_result_"]
+    A --> B --> C
+    C -->|是| D --> J
+    C -->|否| E --> F
+    F -->|否| G --> H
+    F -->|是| H
+    H --> I --> J

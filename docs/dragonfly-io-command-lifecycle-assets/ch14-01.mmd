@@ -1,0 +1,20 @@
+flowchart TD
+    A["命令回复完成"]
+    B["更新 last_interaction / stats"]
+    C{"buffer 还有完整命令？"}
+    D["继续 ParseLoop / ExecuteBatch"]
+    E{"已有 pending command<br/>或控制消息？"}
+    F["继续 drain queue"]
+    G["FlushReplies"]
+    H["Read/Recv 或 io_event.await"]
+    I{"收到数据？"}
+    J["追加到 io_buf_，回到 parse"]
+    K["EOF / error / close request"]
+
+    A --> B --> C
+    C -->|是| D --> A
+    C -->|否| E
+    E -->|是| F --> A
+    E -->|否| G --> H --> I
+    I -->|是| J --> D
+    I -->|否| K

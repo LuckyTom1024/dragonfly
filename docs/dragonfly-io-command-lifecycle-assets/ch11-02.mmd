@@ -1,0 +1,22 @@
+flowchart TD
+    A["EXEC"]
+    B{"EXEC_ERROR / 未 MULTI /<br/>跨 DB WATCH / dirty watch?"}
+    C["错误或 null array"]
+    D["CollectAllKeys"]
+    E["cluster: UniqueSlotChecker"]
+    F["DeduceExecMode"]
+    G["StartMulti<br/>GLOBAL / LOCK_AHEAD / NON_ATOMIC"]
+    H["再次检查 WATCH key 是否过期"]
+    I["ReplyAggregator + StartArray"]
+    J{"允许 multi_exec_squash?"}
+    K["MultiCommandSquasher::Execute"]
+    L["逐条 MultiSwitchCmd<br/>InitByArgs -> InvokeCmd"]
+    M["UnlockMulti"]
+    N["InvokeCmd 收尾 -> MultiCleanup"]
+
+    A --> B
+    B -->|失败| C
+    B -->|通过| D --> E --> F --> G --> H --> I --> J
+    J -->|是| K --> M
+    J -->|否| L --> M
+    M --> N

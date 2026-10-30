@@ -1,0 +1,35 @@
+classDiagram
+    class facade_ConnectionContext {
+      +ConnectionPtr owner
+      +conn_closing
+      +sync_dispatch
+      +async_dispatch
+      +paused
+      +blocked
+      +subscriptions
+    }
+    class dfly_ConnectionContext {
+      +ConnectionState conn_state
+      +NamespacePtr ns
+      +ACL credentials
+      +TransactionPtr transaction
+    }
+    class BackedArguments {
+      +owned argument storage
+    }
+    class ParsedCommand {
+      +SinkReplyBuilderPtr rb
+      +ConnectionContextPtr conn_cntx
+      +Memcache Command optional
+      +deferred reply state
+      +next
+    }
+    class CommandContext {
+      +CommandIdPtr cid
+      +TransactionPtr tx
+      +ParsedArgs tail_args
+    }
+
+    facade_ConnectionContext <|-- dfly_ConnectionContext
+    BackedArguments <|-- ParsedCommand
+    ParsedCommand <|-- CommandContext

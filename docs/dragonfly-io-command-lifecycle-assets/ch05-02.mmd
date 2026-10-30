@@ -1,0 +1,9 @@
+flowchart LR
+    A["Connection::ParseRedis"]
+    B["RespSrvParser::Parse"]
+    C["cmn::BackedArguments"]
+    D["dfly::CommandContext"]
+    E["ParsedArgs 视图"]
+    A --> B -->|"PushArg / 拷贝 bulk 内容"| C
+    C -->|"基类"| D
+    D --> E

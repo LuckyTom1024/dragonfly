@@ -1,0 +1,10 @@
+flowchart LR
+    F["facade::Connection"]
+    SI["facade::ServiceInterface"]
+    S["dfly::Service"]
+    CR["CommandRegistry"]
+    CID["CommandId"]
+    H["handler"]
+    F -->|"DispatchCommand(ParsedArgs, ParsedCommand, preference)"| SI
+    S -.->|"implements"| SI
+    S --> CR --> CID --> H

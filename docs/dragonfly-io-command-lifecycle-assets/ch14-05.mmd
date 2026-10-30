@@ -1,0 +1,21 @@
+stateDiagram-v2
+    state "SemanticCleanup<br/>join/drain/Service::OnConnectionClose" as SemanticCleanup
+    [*] --> Accepted
+    Accepted --> Setup: 创建 Connection Fiber
+    Setup --> ProtocolFlow: TLS/HTTP/RESP/Memcache 分流
+    ProtocolFlow --> WaitingInput: 初始化 context/parser/replier
+    WaitingInput --> Parsing: socket data
+    Parsing --> Dispatching: 完整命令
+    Dispatching --> ShardExecution: transactional command
+    ShardExecution --> Replying: hop 完成
+    Dispatching --> Replying: connection-only command
+    Replying --> Parsing: buffer 仍有命令
+    Replying --> WaitingInput: 当前批次结束
+    WaitingInput --> Closing: EOF/error/shutdown
+    Parsing --> Closing: protocol error
+    Dispatching --> Closing: QUIT/marked close
+    Closing --> SemanticCleanup
+    SemanticCleanup --> SocketClose: listener shutdown + close
+    SocketClose --> Unlinked: intrusive list unlink
+    Unlinked --> Destroyed: intrusive refcount = 0
+    Destroyed --> [*]

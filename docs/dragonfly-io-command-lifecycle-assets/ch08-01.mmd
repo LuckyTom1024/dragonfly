@@ -1,0 +1,17 @@
+flowchart LR
+    C["Connection / command coordinator Fiber"]
+    T["Transaction"]
+    S0["EngineShard 0"]
+    S1["EngineShard 1"]
+    SN["EngineShard N"]
+    DB0["DbSlice 0"]
+    DB1["DbSlice 1"]
+    DBN["DbSlice N"]
+
+    C --> T
+    T -->|"hop callback"| S0 --> DB0
+    T -->|"hop callback"| S1 --> DB1
+    T -->|"hop callback"| SN --> DBN
+    S0 -->|"run_barrier_.Dec"| T
+    S1 -->|"run_barrier_.Dec"| T
+    SN -->|"run_barrier_.Dec"| T

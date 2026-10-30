@@ -35,3 +35,4 @@ tests/dragonfly/valkey_tcl/upstream/
 _codeql_build_dir/
 # CocoIndex Code (ccc)
 /.cocoindex_code/
+.ccls-cache

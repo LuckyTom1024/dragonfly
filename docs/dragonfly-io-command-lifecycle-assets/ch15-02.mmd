@@ -1,0 +1,7 @@
+flowchart LR
+    R1["第一轮：只看骨架<br/>startup -> accept -> ConnectionFlow"]
+    R2["第二轮：只跟 SET<br/>parse -> dispatch -> single shard -> +OK"]
+    R3["第三轮：加入并发<br/>pipeline V1/V2 -> async -> multi shard"]
+    R4["第四轮：加入特殊状态<br/>MULTI / blocking / PubSub / close / background"]
+
+    R1 --> R2 --> R3 --> R4

@@ -1,0 +1,38 @@
+sequenceDiagram
+    autonumber
+    participant C as Client
+    participant CF as Connection Fiber
+    participant P as RespSrvParser
+    participant S as Service
+    participant CR as CommandRegistry
+    participant CS as CmdSet coroutine
+    participant T as Transaction
+    participant Q as EngineShard::queue_
+    participant ES as EngineShard
+    participant DB as DbSlice
+    participant RJ as Tiering / Journal
+    participant RB as RedisReplyBuilder
+    participant K as FiberSocket
+
+    C->>CF: *3 ... SET key value
+    CF->>P: Parse(buffer)
+    P-->>CF: ["SET", "key", "value"]
+    CF->>S: DispatchCommand(args, ParsedCommand, async_pref)
+    S->>CR: FindExtended(args)
+    CR-->>S: CommandId(SET) + tail args
+    S->>S: VerifyCommandState
+    S->>T: PrepareTransaction + InitByArgs
+    S->>CS: CommandId::Invoke -> CmdSet(parser, context)
+    CS->>CS: ParseSetParams
+    CS->>T: co_await cmd::SingleHop(callback)
+    T->>Q: Add(target shard, schedule callback)
+    Q->>ES: ScheduleInShard / PollExecution
+    ES->>CS: callback(Transaction*, EngineShard*)
+    CS->>DB: SetCmd::Set(key, value)
+    DB->>DB: FindMutable 或 AddOrFind
+    DB->>RJ: PostEdit: tiering / explicit journal
+    ES-->>T: FinishHop -> run_barrier Dec
+    T-->>CS: await 完成
+    CS->>RB: SendOk()
+    RB->>K: sink_->Write(iovec...)
+    K-->>C: +OK

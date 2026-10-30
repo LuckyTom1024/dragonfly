@@ -1,0 +1,12 @@
+flowchart TD
+    A["Service::InvokeCmd"]
+    B["DENYOOM 检查"]
+    C["MONITOR 分发"]
+    D["命令统计 / CLIENT TRACKING"]
+    E["ReplyGuard（Debug）"]
+    F["CommandId::Invoke(tail_args, cmd_cntx)"]
+    G["handler(CmdArgParser, CommandContext*)"]
+    H["读取 ReplyBuilder last error"]
+    I["记录 latency / slowlog"]
+    J["清理 EXEC/EVAL 状态"]
+    A --> B --> C --> D --> E --> F --> G --> H --> I --> J

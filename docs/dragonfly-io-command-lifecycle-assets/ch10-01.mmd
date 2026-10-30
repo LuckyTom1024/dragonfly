@@ -1,0 +1,23 @@
+flowchart TD
+    A["CmdSet: rb->SendOk()"]
+    B["SinkReplyBuilder::SendOk"]
+    C["RedisReplyBuilderBase::SendSimpleString"]
+    D["ReplyScope"]
+    E["WritePieces('+', 'OK', CRLF)"]
+    F["FinishScope"]
+    G["Flush"]
+    H["SinkReplyBuilder::Send"]
+    I["io::Sink::Write(iovec[], n)"]
+    J["ApplyExactly<br/>处理 partial write / EINTR"]
+    K{"socket 后端"}
+    U["UringSocket::WriteSome"]
+    UF["FiberCall::Get"]
+    E1["EpollSocket::WriteSome"]
+    EP["PendingReq::Suspend"]
+    L["内核完成写入"]
+    M["恢复当前 Fiber"]
+
+    A --> B --> C --> D --> E --> F --> G --> H --> I --> J --> K
+    K -->|io_uring| U --> UF --> L
+    K -->|epoll| E1 --> EP --> L
+    L --> M

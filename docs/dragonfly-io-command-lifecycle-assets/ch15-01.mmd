@@ -1,0 +1,33 @@
+flowchart TB
+    C["Client socket"]
+    AS["AcceptServer::Run"]
+    AL["ListenerInterface::RunAcceptLoop"]
+    NC["facade::Listener::NewConnection"]
+    CF["Connection Fiber"]
+    RS["ListenerInterface::RunSingleConnection"]
+    HR["Connection::HandleRequests"]
+    FL["Connection::ConnectionFlow"]
+    IO["IoLoop / IoLoopV2"]
+    RECV["HandleRecvSocket / ReadPendingInput"]
+    PARSE["ParseRedis -> RespSrvParser::Parse"]
+    DIS["Service::DispatchCommand"]
+    REG["CommandRegistry::FindExtended -> CommandId"]
+    VER["VerifyCommandState"]
+    PREP["PrepareTransaction -> Transaction::InitByArgs"]
+    INV["InvokeCmd -> CommandId::Invoke"]
+    SET["CmdSet -> co_await cmd::SingleHop"]
+    SCH["Transaction::ScheduleInternal / ScheduleInShard"]
+    Q["EngineShard::queue_<br/>TaskQueue"]
+    POLL["EngineShard::PollExecution"]
+    RUN["Transaction::RunInShard / RunCallback"]
+    DB["SetCmd::Set -> DbSlice"]
+    REP["SinkReplyBuilder::SendOk -> Flush -> Send"]
+    SOCK["io::Sink::Write -> UringSocket / EpollSocket::WriteSome"]
+    AGAIN["继续复用连接"]
+    CLOSE["ConnectionFlow cleanup -> socket close -> unlink"]
+
+    C --> AS --> AL --> NC --> CF --> RS --> HR --> FL --> IO
+    IO --> RECV --> PARSE --> DIS --> REG --> VER --> PREP --> INV --> SET
+    SET --> SCH --> Q --> POLL --> RUN --> DB --> REP --> SOCK --> C
+    SOCK --> AGAIN --> IO
+    IO -.->|"EOF / error / QUIT"| CLOSE

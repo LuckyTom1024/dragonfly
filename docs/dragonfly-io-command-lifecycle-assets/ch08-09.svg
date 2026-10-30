@@ -1,0 +1,127 @@
+<svg id="ch08-09" width="100%" xmlns="http://www.w3.org/2000/svg"
+     xmlns:xlink="http://www.w3.org/1999/xlink" role="graphics-document"
+     aria-roledescription="flowchart" viewBox="0 0 1400 1040"
+     style="max-width: 1400px; background-color: white;">
+  <title>同线程内联与跨线程 PollExecution 的执行栈</title>
+  <desc>
+    Connection Fiber 调用 CmdGet 或 CmdSet 后，依据 CanRunInlined 选择当前 Fiber 内联执行，
+    或先投递到目标 EngineShard 的 queue Fiber；schedule 阶段可直接乐观执行，若进入 TxQueue，
+    再经 PollExecution 执行 callback，最后唤醒 Connection Fiber。
+  </desc>
+  <style>
+    #ch08-09 { font-family: Noto Sans CJK SC, Noto Sans CJK, Arial, sans-serif; font-size: 18px; }
+    .box { fill: #eeeeee; stroke: #888888; stroke-width: 2; }
+    .inline-box { fill: #e9f4ff; stroke: #4f86b7; stroke-width: 2; }
+    .remote-box { fill: #f3eeee; stroke: #a36d6d; stroke-width: 2; }
+    .lane-inline { fill: #f5faff; stroke: #9abfdf; stroke-width: 2; }
+    .lane-remote { fill: #fffafa; stroke: #d4aaaa; stroke-width: 2; }
+    .decision { fill: #fff8dc; stroke: #b39b44; stroke-width: 2; }
+    .label { fill: #111111; text-anchor: middle; dominant-baseline: middle; }
+    .lane-title { font-size: 22px; font-weight: 700; fill: #333333; text-anchor: middle; }
+    .small { font-size: 16px; }
+    .arrow { stroke: #666666; stroke-width: 2.5; fill: none; marker-end: url(#arrow); }
+    .dashed { stroke-dasharray: 8 6; }
+  </style>
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#666666"/>
+    </marker>
+  </defs>
+
+  <!-- Shared command-side path. -->
+  <rect class="box" x="35" y="35" width="260" height="70" rx="8"/>
+  <text class="label" x="165" y="62">Connection Fiber</text>
+  <text class="label small" x="165" y="87">连接线程 T0</text>
+
+  <rect class="box" x="355" y="35" width="260" height="70" rx="8"/>
+  <text class="label" x="485" y="62">CmdGet / CmdSet</text>
+  <text class="label small" x="485" y="87">CommandId::Invoke</text>
+
+  <rect class="box" x="675" y="35" width="310" height="70" rx="8"/>
+  <text class="label" x="830" y="62">SingleHop</text>
+  <text class="label small" x="830" y="87">ScheduleSingleHop / Transaction</text>
+
+  <path class="arrow" d="M 295 70 L 350 70"/>
+  <path class="arrow" d="M 615 70 L 670 70"/>
+  <path class="arrow" d="M 985 70 L 1090 70"/>
+
+  <polygon class="decision" points="1170,25 1260,70 1170,115 1080,70"/>
+  <text class="label" x="1170" y="63">CanRun</text>
+  <text class="label small" x="1170" y="85">Inlined?</text>
+
+  <!-- Two execution lanes. -->
+  <rect class="lane-inline" x="35" y="155" width="635" height="690" rx="12"/>
+  <text class="lane-title" x="352" y="188">路径 A：同线程且允许 inline</text>
+  <text class="label small" x="352" y="216">OS thread T0 / Connection Fiber</text>
+
+  <rect class="lane-remote" x="700" y="155" width="665" height="690" rx="12"/>
+  <text class="lane-title" x="1032" y="188">路径 B：不能 inline，进入 shard queue</text>
+  <text class="label small" x="1032" y="216">连接线程 T0 → 目标 Proactor 线程 T1</text>
+
+  <path class="arrow" d="M 1140 113 C 1020 132, 560 132, 352 245"/>
+  <text class="small" x="780" y="135" fill="#4f86b7">yes</text>
+  <path class="arrow" d="M 1200 115 C 1240 140, 1260 165, 1260 245"/>
+  <text class="small" x="1240" y="145" fill="#a36d6d">no</text>
+
+  <!-- Inline path. -->
+  <rect class="inline-box" x="120" y="245" width="465" height="65" rx="8"/>
+  <text class="label" x="352" y="277">ScheduleInShard(EngineShard::tlocal())</text>
+  <path class="arrow" d="M 352 310 L 352 345"/>
+
+  <rect class="inline-box" x="120" y="345" width="465" height="65" rx="8"/>
+  <text class="label" x="352" y="377">RunCallback（ScheduleInShard 直接调用）</text>
+  <path class="arrow" d="M 352 410 L 352 445"/>
+
+  <rect class="inline-box" x="120" y="445" width="465" height="65" rx="8"/>
+  <text class="label" x="352" y="477">GET/SET 的 shard callback</text>
+  <text class="label small" x="352" y="499">FindReadOnly / SetCmd::Set</text>
+  <path class="arrow" d="M 352 510 L 352 545"/>
+
+  <rect class="inline-box" x="120" y="545" width="465" height="65" rx="8"/>
+  <text class="label" x="352" y="577">run_barrier_.Dec()</text>
+  <text class="label small" x="352" y="599">由 ScheduleInternal 直接完成</text>
+  <path class="arrow" d="M 352 610 L 352 645"/>
+
+  <rect class="inline-box" x="120" y="645" width="465" height="65" rx="8"/>
+  <text class="label" x="352" y="677">DispatchHop：run_cnt == 0</text>
+  <text class="label small" x="352" y="699">SingleHop 返回，继续 CmdGet/CmdSet</text>
+
+  <!-- Queued/cross-thread path. -->
+  <rect class="remote-box" x="800" y="245" width="465" height="65" rx="8"/>
+  <text class="label" x="1032" y="277">shard_set-&gt;Add(target_shard, schedule_cb)</text>
+  <text class="label small" x="1032" y="299">schedule barrier.Wait()</text>
+  <path class="arrow" d="M 1032 310 L 1032 345"/>
+
+  <rect class="remote-box" x="800" y="345" width="465" height="65" rx="8"/>
+  <text class="label" x="1032" y="377">T1 queue Fiber：FiberQueue::Run()</text>
+  <text class="label small" x="1032" y="399">执行 schedule_cb</text>
+  <path class="arrow" d="M 1032 410 L 1032 445"/>
+
+  <rect class="remote-box" x="800" y="445" width="465" height="65" rx="8"/>
+  <text class="label" x="1032" y="477">ScheduleInShard(..., true)</text>
+  <text class="label small" x="1032" y="499">无冲突：直接 RunCallback；否则入 TxQueue</text>
+  <path class="arrow" d="M 1032 510 L 1032 545"/>
+
+  <rect class="remote-box" x="800" y="545" width="465" height="65" rx="8"/>
+  <text class="label" x="1032" y="577">FinishHop → schedule barrier.Dec()</text>
+  <text class="label small" x="1032" y="599">schedule 阶段结束，Connection Fiber 恢复</text>
+  <path class="arrow" d="M 1032 610 L 1032 645"/>
+
+  <rect class="remote-box" x="800" y="645" width="465" height="65" rx="8"/>
+  <text class="label" x="1032" y="677">DispatchHop → Add(poll_cb) → execution Wait</text>
+  <text class="label small" x="1032" y="699">仅 TxQueue 路径需要这一步</text>
+  <path class="arrow" d="M 1032 710 L 1032 745"/>
+
+  <rect class="remote-box" x="800" y="745" width="465" height="80" rx="8"/>
+  <text class="label" x="1032" y="770">PollExecution("exec_cb") → PollExecutionInternal</text>
+  <text class="label small" x="1032" y="793">RunInShard → RunCallback → GET/SET callback</text>
+  <text class="label small" x="1032" y="812">FinishHop → execution barrier.Dec()</text>
+
+  <!-- Return to the connection side. -->
+  <path class="arrow dashed" d="M 352 710 C 352 865, 680 875, 820 875"/>
+  <path class="arrow dashed" d="M 1032 825 C 1032 865, 900 875, 820 875"/>
+
+  <rect class="box" x="410" y="900" width="580" height="75" rx="8"/>
+  <text class="label" x="700" y="930">Connection Fiber 恢复</text>
+  <text class="label small" x="700" y="955">GetReplies::Send / ReplyBuilder::SendOk</text>
+</svg>

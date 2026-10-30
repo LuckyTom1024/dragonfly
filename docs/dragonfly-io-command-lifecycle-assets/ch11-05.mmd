@@ -1,0 +1,25 @@
+flowchart LR
+    subgraph Producers["可能来自其他 shard / 管理流程的 producer"]
+      P["PubMessage"]
+      M["MonitorMessage"]
+      C["CheckpointMessage"]
+      I["InvalidationMessage"]
+      G["MigrationRequestMessage"]
+    end
+
+    S["Connection::SendAsync"]
+    Q["dispatch_q_<br/>控制路径 deque"]
+    V1["V1: AsyncFiber"]
+    V2["V2: IoLoopV2 同一个 Connection Fiber"]
+    O["AsyncOperations visitor"]
+    R["ReplyBuilder 或控制动作"]
+
+    P --> S
+    M --> S
+    C --> S
+    I --> S
+    G --> S
+    S --> Q
+    Q --> V1 --> O
+    Q --> V2 --> O
+    O --> R

@@ -1,0 +1,32 @@
+flowchart TB
+    MAIN["main pthread<br/>启动、信号后的有序停机"]
+
+    subgraph PT["Proactor pthread × N"]
+      PL["Proactor event loop"]
+      NORMAL["NORMAL/HIGH Fibers<br/>Connection、shard_queue、heartbeat 默认"]
+      BACK["BACKGROUND Fibers（按 flag）<br/>heartbeat / SliceSnapshot"]
+      IDLE["on-idle callbacks<br/>defrag、Huffman check"]
+      REPL["replication main / flow / ack Fibers"]
+      CRON["snapshot scheduling / bg_save Fiber"]
+    end
+
+    subgraph FILE["仅 epoll 文件后端：额外 pthread × epoll_file_threads"]
+      FQ["FiberQueueThreadPool workers"]
+      BIO["阻塞 pread/pwrite/open/close"]
+    end
+
+    subgraph K["Kernel"]
+      UR["io_uring socket + file IO"]
+      EP["epoll socket readiness"]
+      FS["filesystem / network"]
+    end
+
+    MAIN --> PT
+    PL --> NORMAL
+    PL --> BACK
+    PL --> IDLE
+    PL --> REPL
+    PL --> CRON
+    CRON -->|"epoll 文件"| FQ --> BIO --> FS
+    PL -->|"io_uring 文件/网络"| UR --> FS
+    PL --> EP --> FS

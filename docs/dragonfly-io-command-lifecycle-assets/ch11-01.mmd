@@ -1,0 +1,9 @@
+stateDiagram-v2
+    [*] --> EXEC_INACTIVE
+    EXEC_INACTIVE --> EXEC_COLLECT: MULTI / SendOk
+    EXEC_COLLECT --> EXEC_COLLECT: 普通命令<br/>StoreInMultiBlock + QUEUED
+    EXEC_COLLECT --> EXEC_ERROR: 收集期校验失败
+    EXEC_COLLECT --> EXEC_RUNNING: EXEC 校验成功
+    EXEC_ERROR --> EXEC_INACTIVE: EXECABORT + MultiCleanup
+    EXEC_COLLECT --> EXEC_INACTIVE: DISCARD + MultiCleanup
+    EXEC_RUNNING --> EXEC_INACTIVE: 执行、UnlockMulti、MultiCleanup

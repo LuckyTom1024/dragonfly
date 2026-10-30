@@ -1,0 +1,18 @@
+sequenceDiagram
+    participant F1 as Connection Fiber A
+    participant S as FiberSocket
+    participant P as Proactor loop
+    participant K as Kernel
+    participant F2 as Connection Fiber B
+
+    F1->>S: WriteSome(iovec)
+    S->>K: submit send / try sendmsg
+    alt 不能立即完成
+      S->>P: Suspend 当前 Fiber
+      P->>F2: 运行其他 ready Fiber
+      K-->>P: CQE 或 EPOLLOUT
+      P->>F1: 放回 ready queue
+      F1->>S: 从等待点继续
+    else 立即完成
+      S-->>F1: bytes written
+    end

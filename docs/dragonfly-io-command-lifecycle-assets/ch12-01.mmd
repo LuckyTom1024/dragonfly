@@ -1,0 +1,35 @@
+flowchart TB
+    subgraph D["Dragonfly 业务层"]
+      CONN["Connection / IoLoop"]
+      TX["Transaction"]
+      SHARD["EngineShard / DbSlice"]
+      BG["Heartbeat / Snapshot / Replication"]
+    end
+
+    subgraph H["Helio 运行时"]
+      POOL["ProactorPool"]
+      P["ProactorBase"]
+      SCH["fb2::detail::Scheduler"]
+      F["fb2::Fiber 与同步原语"]
+      SOCK["FiberSocketBase"]
+    end
+
+    subgraph OS["内核与 OS"]
+      TH["pthread / CPU"]
+      UR["io_uring"]
+      EP["epoll"]
+      TCP["socket / file"]
+    end
+
+    CONN --> F
+    TX --> F
+    SHARD --> F
+    BG --> F
+    POOL --> P --> SCH --> F
+    CONN --> SOCK
+    SOCK --> P
+    P --> UR
+    P --> EP
+    POOL --> TH
+    UR --> TCP
+    EP --> TCP

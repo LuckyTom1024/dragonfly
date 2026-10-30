@@ -1,0 +1,24 @@
+flowchart TD
+    A["Transaction::DispatchHop"]
+    B["统计需运行 shard，Start barrier"]
+    C["每 shard is_armed=true"]
+    D{"CanRunInlined？"}
+    E["本线程 EngineShard::PollExecution"]
+    F["shard_set->Add(sid, poll_cb)"]
+    G["EngineShard::PollExecution"]
+    H{"已有 running_tx_？"}
+    I["needs_repoll_=true，稍后再驱动"]
+    J["优先 awakened / continuation"]
+    K["扫描 txq head 或 OUT_OF_ORDER caller"]
+    L["Transaction::RunInShard"]
+    M["RunCallback"]
+    N["命令具体 shard lambda"]
+    O["最终 hop：journal、解锁、移出 txq"]
+    P["FinishHop -> barrier Dec"]
+
+    A --> B --> C --> D
+    D -->|是| E --> G
+    D -->|否| F --> G
+    G --> H
+    H -->|是| I
+    H -->|否| J --> K --> L --> M --> N --> O --> P

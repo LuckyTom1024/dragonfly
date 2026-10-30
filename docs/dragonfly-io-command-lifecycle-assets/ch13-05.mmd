@@ -1,0 +1,32 @@
+flowchart TD
+    A["Replica::MainReplicationFb<br/>Fiber 名 main_replication，固定在创建它的 Proactor"]
+    B["resolve / connect / greet"]
+    C{"master 类型"}
+    R["Redis stream<br/>单控制流解析命令"]
+    D["Dragonfly: InitiateDflySync"]
+    P["Partition(flow ids, pool size)"]
+
+    subgraph F0["Proactor 0"]
+      X0["flow 0 full/stable read Fiber"]
+      A0["flow 0 ack Fiber"]
+    end
+    subgraph F1["Proactor 1"]
+      X1["flow 1 full/stable read Fiber"]
+      A1["flow 1 ack Fiber"]
+    end
+    subgraph FN["其他 Proactor"]
+      XN["更多 flow Fibers"]
+    end
+
+    J["JournalReader / RdbLoader"]
+    T["Transaction / EngineShard 应用数据"]
+
+    A --> B --> C
+    C -->|Redis master| R --> T
+    C -->|Dragonfly master| D --> P
+    P --> X0 --> J
+    P --> X1 --> J
+    P --> XN --> J
+    X0 --> A0
+    X1 --> A1
+    J --> T

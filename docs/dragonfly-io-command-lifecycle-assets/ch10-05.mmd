@@ -1,0 +1,14 @@
+flowchart LR
+    C1["命令 1<br/>先解析，仍在执行"]
+    C2["命令 2<br/>后解析，先完成"]
+    Q["ParsedCommand 链表<br/>parsed_head_ 指向命令 1"]
+    H{"队首 CanReply?"}
+    W["WaitEvent / io_event 等待"]
+    R1["发送命令 1 回复"]
+    R2["随后发送命令 2 回复"]
+
+    C1 --> Q
+    C2 --> Q
+    Q --> H
+    H -->|否| W --> H
+    H -->|是| R1 --> R2

@@ -1,0 +1,12 @@
+flowchart TD
+    A["ParseMCBatch"]
+    B["MemcacheParser::Parse"]
+    C{"结果"}
+    D["Command: type/key/value/flags/expiry"]
+    E["EnqueueParsedCommand"]
+    F["把可恢复 parse error 存成 deferred reply"]
+    G["INPUT_PENDING，等待剩余 value"]
+    A --> B --> C
+    C -->|OK| D --> E
+    C -->|UNKNOWN/BAD/PARSE_ERROR| F --> E
+    C -->|INPUT_PENDING| G

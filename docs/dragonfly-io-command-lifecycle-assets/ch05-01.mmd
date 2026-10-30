@@ -1,0 +1,24 @@
+flowchart TD
+    A["ConnectionFlow"]
+    B{"io_buf_ 已有 HTTP 探测预读数据？"}
+    C["先在 PROCESS 阶段解析"]
+    D{"ioloop_v2_？"}
+    E["IoLoop（V1）"]
+    F["IoLoopV2"]
+    G["HandleRecvSocket"]
+    H["FiberSocketBase::Recv"]
+    I{"立即有数据？"}
+    J["返回字节"]
+    K["当前 Connection Fiber 挂起"]
+    L["Proactor 收到 readiness / completion"]
+    M["恢复 Connection Fiber"]
+    N["IoBuf::CommitWrite"]
+    O["ParseRedis 或 ParseLoop"]
+
+    A --> B
+    B -->|是| C --> D
+    B -->|否| D
+    D -->|否| E --> G --> H --> I
+    I -->|是| J --> N --> O
+    I -->|否| K --> L --> M --> J
+    D -->|是| F

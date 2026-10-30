@@ -1,0 +1,26 @@
+flowchart TD
+    A["Client socket"]
+    B["AcceptServer::Run"]
+    C["ListenerInterface::RunAcceptLoop"]
+    D["facade::Listener::NewConnection"]
+    E["ListenerInterface::RunSingleConnection"]
+    F["facade::Connection::HandleRequests"]
+    G["Connection::ConnectionFlow / IoLoop"]
+    H["RespSrvParser::Parse"]
+    I["Service::DispatchCommand"]
+    J["CommandRegistry::FindExtended"]
+    K["PrepareTransaction（按需）"]
+    L["CommandId::Invoke"]
+    M["命令 handler，例如 CmdSet"]
+    N["Transaction::ScheduleSingleHop"]
+    O["EngineShard::PollExecution"]
+    P["DbSlice / 具体数据结构"]
+    Q["RedisReplyBuilder / MCReplyBuilder"]
+    R["SinkReplyBuilder::Send"]
+    S["UringSocket / EpollSocket::WriteSome"]
+    T["Client"]
+
+    A --> B --> C --> D --> E --> F --> G --> H --> I --> J
+    J --> K --> L --> M --> N --> O --> P --> Q --> R --> S --> T
+    J -->|"无键、非事务命令"| L
+    N -->|"同线程且满足条件"| P

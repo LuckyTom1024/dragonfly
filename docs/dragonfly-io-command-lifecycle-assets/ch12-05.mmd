@@ -1,0 +1,13 @@
+flowchart LR
+    BC["Boost.Context<br/>保存/切换有栈执行上下文"]
+    FB["Helio fb2::Fiber + Scheduler"]
+    DF["Dragonfly Connection / Transaction"]
+    BI["Boost.Intrusive<br/>ready/sleep/connection/pending lists"]
+    IP["boost::intrusive_ptr<br/>对象内引用计数"]
+    AS["Boost.Asio endpoint<br/>地址值类型"]
+
+    BC --> FB --> DF
+    BI --> FB
+    BI --> DF
+    IP --> DF
+    AS --> DF

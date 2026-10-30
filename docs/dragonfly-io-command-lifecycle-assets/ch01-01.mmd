@@ -1,0 +1,36 @@
+flowchart LR
+    C["Redis / Memcached 客户端"]
+
+    subgraph P["Dragonfly 进程"]
+      M["main 线程<br/>配置、启动、等待停机"]
+
+      subgraph T0["Proactor 0（OS 线程）"]
+        A0["AcceptLoop Fiber"]
+        C0["Connection Fiber A"]
+        Q0["高优先级 shard_queue_0 Fiber"]
+        S0["EngineShard 0<br/>DbSlice 0"]
+      end
+
+      subgraph T1["Proactor 1（OS 线程）"]
+        C1["Connection Fiber B"]
+        Q1["高优先级 shard_queue_1 Fiber"]
+        S1["EngineShard 1<br/>DbSlice 1"]
+      end
+
+      subgraph TN["其余 Proactor 线程"]
+        CN["更多 Connection / 后台 Fiber"]
+      end
+    end
+
+    C -->|"TCP / UDS"| A0
+    A0 -->|"选择连接 Proactor"| C0
+    A0 -->|"也可能选择其他线程"| C1
+    C0 -->|"Transaction hop"| Q0
+    C0 -->|"跨线程 hop"| Q1
+    C1 -->|"跨线程 hop"| Q0
+    Q0 --> S0
+    Q1 --> S1
+    C0 -->|"RESP 回复"| C
+    C1 -->|"RESP / Memcache 回复"| C
+    M -.->|"创建、停机协调"| T0
+    M -.-> TN

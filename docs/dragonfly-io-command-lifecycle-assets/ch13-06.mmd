@@ -1,0 +1,14 @@
+flowchart LR
+    CPU["同一 Proactor CPU 时间"]
+    N["NORMAL 请求 / shard queue"]
+    B["BACKGROUND snapshot"]
+    I["idle defrag"]
+    IO["磁盘 / 网络等待"]
+
+    CPU --> N
+    CPU --> B
+    CPU --> I
+    B -->|"每 bucket Yield"| N
+    I -->|"cycle quota 后返回"| N
+    B --> IO
+    IO -->|"Suspend Fiber"| N

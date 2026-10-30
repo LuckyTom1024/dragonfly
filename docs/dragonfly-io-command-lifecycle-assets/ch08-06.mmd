@@ -1,0 +1,25 @@
+sequenceDiagram
+    participant C as Coordinator Fiber
+    participant T as Transaction
+    participant Q0 as shard_queue 0
+    participant Q1 as shard_queue 1
+    participant S0 as EngineShard 0
+    participant S1 as EngineShard 1
+
+    C->>T: ScheduleInternal()
+    T->>T: 分配全局 TxId
+    par schedule
+      T->>Q0: Add(ScheduleInShard)
+      Q0->>S0: intent lock + txq insert
+    and
+      T->>Q1: Add(ScheduleInShard)
+      Q1->>S1: intent lock + txq insert
+    end
+    S0-->>T: FinishHop
+    S1-->>T: FinishHop
+    T-->>C: run_barrier ready
+    alt 任一 shard 检测乱序冲突
+      C->>T: CancelShardCb on active shards
+      T->>T: InitTxTime / 新 TxId
+      C->>T: retry
+    end

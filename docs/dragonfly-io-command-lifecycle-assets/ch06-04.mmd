@@ -1,0 +1,22 @@
+classDiagram
+    class Connection {
+      ParsedCommandPtr parsed_head_
+      ParsedCommandPtr parsed_tail_
+      ParsedCommandPtr parsed_to_execute_
+      size_t parsed_cmd_q_len_
+      deque~MessageHandle~ dispatch_q_
+      CondVarAny cnd_
+      Fiber async_fb_
+    }
+    class ParsedCommand {
+      ParsedCommandPtr next
+      BackedArguments args
+      deferred_reply
+      parsed_cycle
+    }
+    class MessageHandle {
+      variant handle
+      dispatch_cycle
+    }
+    Connection "1" o-- "0..*" ParsedCommand : data path / 单链表
+    Connection "1" o-- "0..*" MessageHandle : control path / deque

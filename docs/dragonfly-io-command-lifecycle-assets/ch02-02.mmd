@@ -1,0 +1,10 @@
+flowchart LR
+    APP["Dragonfly / facade"]
+    API["FiberSocketBase + ProactorBase"]
+    U["UringProactor / UringSocket<br/>提交操作、读取 completion"]
+    E["EpollProactor / EpollSocket<br/>等待 readiness、恢复 Fiber"]
+    K["Linux kernel"]
+
+    APP --> API
+    API --> U --> K
+    API --> E --> K

@@ -1,0 +1,22 @@
+flowchart TD
+    A["先执行一次 pop callback"]
+    B{"找到可返回元素？"}
+    C["回复并 Conclude"]
+    D["Transaction::WaitOnWatch"]
+    E["各 active shard: WatchInShard"]
+    F["BlockingController::AddWatched"]
+    G["blocking_barrier_.Wait(timeout)<br/>挂起协调 Connection Fiber"]
+    H{"唤醒原因"}
+    I["写命令触碰 key<br/>Awaken -> NotifyPending"]
+    J["超时 / socket close / cancel"]
+    K["NotifySuspended<br/>关闭 barrier"]
+    L["ExpireBlocking<br/>从 watch queue 清理"]
+    M["恢复协调 Fiber"]
+    N["action hop 再执行 pop"]
+    O["回复"]
+
+    A --> B
+    B -->|是| C
+    B -->|否| D --> E --> F --> G --> H
+    H -->|key ready| I --> K --> M --> N --> O
+    H -->|超时或取消| J --> L --> M --> O

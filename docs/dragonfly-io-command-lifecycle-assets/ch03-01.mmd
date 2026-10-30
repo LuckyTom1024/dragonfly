@@ -1,0 +1,11 @@
+flowchart TD
+    A["RunEngine"]
+    B["MakeListener(protocol, service, role)"]
+    C["facade::Listener"]
+    D["AcceptServer::AddListener"]
+    E["选择一个 Proactor<br/>GetNextProactor"]
+    F["CreateSocket -> ConfigureServerSocket"]
+    G["Bind -> Listen"]
+    H["ListenerInterface::InitByAcceptServer"]
+    I["AcceptServer 取得 Listener 所有权"]
+    A --> B --> C --> D --> E --> F --> G --> H --> I

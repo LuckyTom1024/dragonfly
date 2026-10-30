@@ -1,0 +1,15 @@
+flowchart TD
+    A{"能指出 Connection Fiber<br/>在哪个函数创建？"}
+    B{"能解释连接为何不迁移到 key shard？"}
+    C{"能区分 Fiber wait 与 coroutine suspend？"}
+    D{"能说明单 shard SET<br/>为何可能没有 txid/TxQueue？"}
+    E{"能从 SendOk 追到 WriteSome？"}
+    F{"能说清关闭时谁先销毁？"}
+    G["已建立可继续深入的整体心智模型"]
+
+    A -->|是| B
+    B -->|是| C
+    C -->|是| D
+    D -->|是| E
+    E -->|是| F
+    F -->|是| G

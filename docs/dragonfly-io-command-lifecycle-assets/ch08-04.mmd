@@ -1,0 +1,19 @@
+flowchart TD
+    A["ScheduleInternal"]
+    B{"coordinator 就在目标 shard 线程？"}
+    C["CanRunInlined -> 直接 ScheduleInShard"]
+    D["shard_set->Add(target, schedule_cb)"]
+    E["ScheduleInShard"]
+    F{"单 shard + concluding +<br/>shard/key 无冲突 + 无 running_tx？"}
+    G["OPTIMISTIC_EXECUTION"]
+    H["RunCallback 立即执行"]
+    I["释放 lock，不分配 txid，不进 TxQueue"]
+    J["需要排序：分配 txid 并插入 TxQueue"]
+    K["后续 PollExecution"]
+
+    A --> B
+    B -->|是| C --> E
+    B -->|否| D --> E
+    E --> F
+    F -->|是| G --> H --> I
+    F -->|否| J --> K

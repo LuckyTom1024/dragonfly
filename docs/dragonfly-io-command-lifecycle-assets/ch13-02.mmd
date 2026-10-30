@@ -1,0 +1,15 @@
+flowchart TD
+    A["EngineShardSet::Init"]
+    B["AwaitFiberOnAll: InitThreadLocal"]
+    C["创建 Namespaces"]
+    D["AwaitFiberOnAll: InitTieredStorage"]
+    E["StartPeriodicHeartbeatFiber"]
+    F["RunFPeriodically"]
+    G["EngineShard::Heartbeat"]
+    H["过期 key / eviction / stats<br/>blocking NotifyPending 等维护"]
+    I["AddOnIdleTask: DefragTask"]
+    J["按 quota 扫描和搬移对象"]
+
+    A --> B --> C --> D
+    D --> E --> F --> G --> H
+    E --> I --> J
